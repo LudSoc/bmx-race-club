@@ -22,7 +22,7 @@ node tools/clubs/clubs-build.cjs
 2. `ffc-match.cjs` — matche les codes Sqorz (`pilots-index.json`, champ `gn`)
    contre le crawl → `match-auto.json` / `match-review.json` / `match-none.json`.
 3. Adjuger `match-review.json` à la main (région × top pistes du club), compléter
-   `MANUAL`, relancer `clubs-build.cjs`, propager via `tools/sync-clubs.sh`.
+   `MANUAL`, relancer `clubs-build.cjs`, propager via `tools/sync-data.sh`.
 
 Règles : auto si score ≥ 85 et écart ≥ 10 ; `single60`, `tie-bmx` ; codes
 `DN*/EA*`, pays et teams gardés tels quels (repli : code seul dans l'app).
@@ -32,10 +32,11 @@ Règles : auto si score ≥ 85 et écart ≥ 10 ; `single60`, `tie-bmx` ; codes
 ## Propager aux autres dépôts
 
 ```sh
-tools/sync-clubs.sh
+tools/sync-data.sh
 ```
 
-Copie le `clubs.json` canonique vers `sqorz_stats/`, `h2h_stats/` et
-`category_stats/` (dépôts frères dans `sqorz_tools/`). Commiter ensuite dans
-chaque dépôt (déploiements GitHub Pages indépendants → copies versionnées,
-pas de dépendance croisée au runtime).
+Copie le `clubs.json` canonique vers `sqorz_stats/`, `h2h_stats/`,
+`category_stats/` et `ranking_stats/` — plus `perf-rankings.json`
+(canonique `sqorz_stats`) vers `ranking_stats/` (dépôts frères dans
+`sqorz_tools/`). Commiter ensuite dans chaque dépôt (déploiements GitHub
+Pages indépendants → copies versionnées, pas de dépendance croisée au runtime).
