@@ -1,4 +1,6 @@
 <!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later
+     Copyright (c) 2026 ludovic.socie -->
 <html lang="fr">
 <head>
 <meta charset="utf-8">
@@ -69,8 +71,8 @@ body{
 .donate-btn:active{transform:scale(.95)}
 .donate-icon{font-size:1.15rem;display:inline-flex;align-items:center}
 @media(max-width:520px){.donate-btn .donate-label{display:none}}
-  .hub-back{display:inline-block;margin-top:10px;font-size:12px;color:rgba(255,255,255,.65);text-decoration:none;letter-spacing:.1px}
-  .hub-back:hover{color:#fff}
+  .hub-back{display:inline-flex;align-items:center;gap:6px;margin-top:14px;color:#fff;font-size:13px;font-weight:600;text-decoration:none;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);padding:6px 12px;border-radius:99px}
+  .hub-back:hover{background:rgba(255,255,255,.28)}
   #retryBtn:not([hidden]){display:block;margin:8px auto 0;padding:6px 18px;background:var(--accent,#4e80ee);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer}
   #retryBtn:hover{opacity:.85}
   .progress{height:6px;background:var(--card-soft);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:10px}
@@ -194,8 +196,8 @@ input.control, select.control{width:100%}
 }
 .yp-btn:hover{border-color:var(--accent); color:var(--accent-hi)}
 .yp-btn.active{background:var(--accent); border-color:var(--accent); color:#fff}
-.share-btn{background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;padding:6px 12px;font-size:0.82rem;cursor:pointer;transition:background .15s}
-.share-btn:hover{background:rgba(255,255,255,0.15)}
+
+
 
 /* Table */
 .table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
@@ -375,9 +377,11 @@ footer a:hover{text-decoration:underline}
         </span>
         Sqorz Club Stats
       </div>
-      <button id="shareBtn" class="share-btn" onclick="copyLink()">Copier le lien</button>
+      
+      <div style="display:flex; gap:8px; align-items:center">
       <a href="https://ko-fi.com/sqorz_tools" target="_blank" rel="noopener noreferrer" class="donate-btn" title="Soutenir le projet sur Ko-fi"><span class="donate-icon">☕</span><span class="donate-label">Soutenir</span></a>
       <button type="button" id="themeBtn" class="theme-btn" aria-label="Changer le thème" title="Changer le thème (auto / clair / sombre)"></button>
+      </div>
     </div>
     <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au Sqorz Hub">← Sqorz Hub</a>
     <h1>Sqorz · Stats Club</h1>
@@ -423,7 +427,7 @@ footer a:hover{text-decoration:underline}
 (() => {
   if (!window.SqorzCommon) throw new Error('[club] common.js introuvable — recharge la page.');
   // Socle partagé (common.js) : utils, expansion d'index, chargeur à cache, dates.
-  const { norm, escape, humanError, isFinalPhase, expandIndex, loadIndexCached, renderDataDates, setBarProgress, isFav, toggleFav, pushRecent } = window.SqorzCommon;
+  const { norm, escape, humanError, isFinalPhase, isTimeTrialPhase, expandIndex, loadIndexCached, renderDataDates, setBarProgress, isFav, toggleFav, pushRecent } = window.SqorzCommon;
   const INDEX_SOURCES = [
     'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/pilots-index.json',
     'https://github.com/LudSoc/sqorz-stats/releases/latest/download/pilots-index.json',
@@ -1005,7 +1009,8 @@ footer a:hover{text-decoration:underline}
     let count = 0;
     for (const pilot of pilots) {
       for (const m of pilot.matches) {
-        if ((m.competitor.competitorRankDetails || []).some(isFinalPhase)) count++;
+        // Hors contre-la-montre (runs en solo : une « Super Final » n'est pas une finale).
+        if ((m.competitor.competitorRankDetails || []).some(d => isFinalPhase(d) && !isTimeTrialPhase(d))) count++;
       }
     }
     return count;
@@ -1662,9 +1667,7 @@ footer a:hover{text-decoration:underline}
     document.getElementById('hubBackLink').href = base;
   })();
 </script>
-<script>
-function copyLink(){const btn=document.getElementById('shareBtn');const url=window.location.href;const restore=()=>{btn.textContent='Copier le lien'};if(navigator.clipboard){navigator.clipboard.writeText(url).then(()=>{btn.textContent='✓ Lien copié !';setTimeout(restore,2000)})}else{const el=document.createElement('textarea');el.value=url;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);btn.textContent='✓ Lien copié !';setTimeout(restore,2000)}}
-</script>
+
 
 </body>
 </html>
