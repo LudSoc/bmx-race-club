@@ -6,14 +6,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%234a7ab5'/><text x='16' y='23' font-family='system-ui' font-size='20' font-weight='800' fill='white' text-anchor='middle'>S</text></svg>">
-<title>Stats Club BMX — Sqorz Hub</title>
+<title>BMX-Race · Stats Club</title>
 <meta name="description" content="Analysez les performances d'un club BMX Race : classements, évolutions et comparatifs par année.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://ludsoc.github.io/sqorz-club/">
-<meta property="og:title" content="Stats Club BMX — Sqorz Hub">
+<meta property="og:url" content="https://ludsoc.github.io/bmx-race-club/">
+<meta property="og:title" content="BMX-Race · Stats Club">
 <meta property="og:description" content="Analysez les performances d'un club BMX Race : classements, évolutions et comparatifs par année.">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Stats Club BMX — Sqorz Hub">
+<meta name="twitter:title" content="BMX-Race · Stats Club">
 <meta name="twitter:description" content="Analysez les performances d'un club BMX Race : classements, évolutions et comparatifs par année.">
 <script>
   (() => {
@@ -375,7 +375,7 @@ footer a:hover{text-decoration:underline}
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
         </span>
-        Sqorz Club Stats
+        BMX-Race Club
       </div>
       
       <div style="display:flex; gap:8px; align-items:center">
@@ -383,8 +383,8 @@ footer a:hover{text-decoration:underline}
       <button type="button" id="themeBtn" class="theme-btn" aria-label="Changer le thème" title="Changer le thème (auto / clair / sombre)"></button>
       </div>
     </div>
-    <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au Sqorz Hub">← Sqorz Hub</a>
-    <h1>Sqorz · Stats Club</h1>
+    <a class="hub-back" id="hubBackLink" href="#" aria-label="Retour au BMX-Race Hub">← BMX-Race Hub</a>
+    <h1>BMX-Race · Stats Club</h1>
     <p>Pilotes, victoires et podiums d'un club BMX en un coup d'œil.</p>
   </div>
 </div>
@@ -421,21 +421,21 @@ footer a:hover{text-decoration:underline}
 
 <button id="backToTop" aria-label="Retour en haut" title="Retour en haut">↑</button>
 
-<script src="https://ludsoc.github.io/sqorz-stats/common.js"></script>
-<script>if (!window.SqorzCommon) document.write('<script src="../sqorz_stats/common.js"><\/script>');</script>
+<script src="https://ludsoc.github.io/bmx-race-stats/common.js"></script>
+<script>if (!window.BmxCommon) document.write('<script src="../sqorz_stats/common.js"><\/script>');</script>
 <script>
 (() => {
-  if (!window.SqorzCommon) throw new Error('[club] common.js introuvable — recharge la page.');
+  if (!window.BmxCommon) throw new Error('[club] common.js introuvable — recharge la page.');
   // Socle partagé (common.js) : utils, expansion d'index, chargeur à cache, dates.
-  const { norm, escape, humanError, isFinalPhase, isTimeTrialPhase, expandIndex, loadIndexCached, renderDataDates, setBarProgress, isFav, toggleFav, pushRecent } = window.SqorzCommon;
+  const { norm, escape, humanError, isFinalPhase, isTimeTrialPhase, expandIndex, loadIndexCached, renderDataDates, setBarProgress, isFav, toggleFav, pushRecent } = window.BmxCommon;
   const INDEX_SOURCES = [
     'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/pilots-index.json',
-    'https://github.com/LudSoc/sqorz-stats/releases/latest/download/pilots-index.json',
-    'https://raw.githubusercontent.com/LudSoc/sqorz-stats/main/pilots-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/pilots-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/pilots-index.json',
   ];
-  const SQORZ_STATS_BASE = window.location.protocol === 'file:'
+  const STATS_BASE = window.location.protocol === 'file:'
     ? '../sqorz_stats/index.html'
-    : 'https://ludsoc.github.io/sqorz-stats/';
+    : 'https://ludsoc.github.io/bmx-race-stats/';
 
   // --- Labels catégories (identique à category_stats) ---
   const CLASS_GROUPS = [
@@ -512,13 +512,13 @@ footer a:hover{text-decoration:underline}
     return CLASS_NAMES[code] || code;
   }
 
-  // --- Utilitaires : voir SqorzCommon (norm, escape, humanError) ---
+  // --- Utilitaires : voir BmxCommon (norm, escape, humanError) ---
   // normClub : normalisation douce préservant la casse/ponctuation des noms de clubs.
 
   const normClub = s => (s || '').trim()
     .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-  // --- Logique de phases : isFinalPhase via SqorzCommon ---
+  // --- Logique de phases : isFinalPhase via BmxCommon ---
 
   // --- computeStats (identique à category_stats) ---
   function computeStats(matches) {
@@ -541,7 +541,7 @@ footer a:hover{text-decoration:underline}
     return s;
   }
 
-  // --- expandIndex : voir SqorzCommon (sur-ensemble : phases, chronos, séries) ---
+  // --- expandIndex : voir BmxCommon (sur-ensemble : phases, chronos, séries) ---
 
   // --- Noms complets des clubs (clubs.json : CODE -> {name, city}, annuaire FFC) ---
   let clubFullNames = new Map();
@@ -636,9 +636,9 @@ footer a:hover{text-decoration:underline}
     setBarProgress(done, total);
   }
 
-  // --- Chargement via SqorzCommon.loadIndexCached (cache Cache API piloté par meta.json) ---
-  const INDEX_CACHE_KEY = 'https://sqorz.local/cache/pilots-index.json';
-  const INDEX_META_URL = 'https://ludsoc.github.io/sqorz-stats/pilots-index.meta.json';
+  // --- Chargement via BmxCommon.loadIndexCached (cache Cache API piloté par meta.json) ---
+  const INDEX_CACHE_KEY = 'https://bmx-race.local/cache/pilots-index.json';
+  const INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/pilots-index.meta.json';
 
   function pilotsCfg() {
     return {
@@ -650,7 +650,7 @@ footer a:hover{text-decoration:underline}
     };
   }
 
-  // Fraîcheur dans le pied de page (via SqorzCommon.renderDataDates).
+  // Fraîcheur dans le pied de page (via BmxCommon.renderDataDates).
   function showDataDates() {
     renderDataDates([
       { tag: 'FR', iso: pilotsIndex && pilotsIndex.generated },
@@ -781,7 +781,7 @@ footer a:hover{text-decoration:underline}
     pushUrlState(key);  // ← ajout
   }
 
-  // --- Favoris partagés (état inter-outils, cf. SqorzCommon.toggleFav) ---
+  // --- Favoris partagés (état inter-outils, cf. BmxCommon.toggleFav) ---
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-fav-club]');
     if (!btn || btn.disabled || typeof toggleFav !== 'function') return;
@@ -1308,7 +1308,7 @@ footer a:hover{text-decoration:underline}
                      : rank === 2 ? `<span class="rpill r2">2</span>`
                      : rank === 3 ? `<span class="rpill r3">3</span>`
                      : rank;
-      const pilotUrl = `${SQORZ_STATS_BASE}?name=${encodeURIComponent(pilot.firstName + ' ' + pilot.lastName)}`;
+      const pilotUrl = `${STATS_BASE}?name=${encodeURIComponent(pilot.firstName + ' ' + pilot.lastName)}`;
       const nameCell = `<a class="pilot-link" href="${escape(pilotUrl)}" target="_blank" rel="noopener noreferrer">${escape(pilot.name)}</a>`;
       const winsCell = s.wins > 0 ? `<span class="wins-badge">${s.wins}</span>` : '0';
       return `<tr class="pilot-row" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
@@ -1663,7 +1663,7 @@ footer a:hover{text-decoration:underline}
   (() => {
     const base = window.location.protocol === 'file:'
       ? '../sqorz_hub/index.html'
-      : 'https://ludsoc.github.io/sqorz-hub/';
+      : 'https://ludsoc.github.io/bmx-race-hub/';
     document.getElementById('hubBackLink').href = base;
   })();
 </script>

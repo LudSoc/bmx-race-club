@@ -1,4 +1,4 @@
-// Tests de l'état partagé inter-outils côté club_stats (convention sqorz.*).
+// Tests de l'état partagé inter-outils côté bmx-race-club (convention bmx.*).
 // Usage : node --test tests/shared-state.test.js
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -8,7 +8,7 @@ const path = require('path');
 const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
 test('helpers partagés importés du socle', () => {
-  assert.ok(src.includes('isFav, toggleFav, pushRecent'), 'destructure SqorzCommon');
+  assert.ok(src.includes('isFav, toggleFav, pushRecent'), 'destructure BmxCommon');
 });
 
 test('fiche club : bouton ☆ avec état initial isFav', () => {

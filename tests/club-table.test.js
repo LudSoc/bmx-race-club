@@ -20,7 +20,7 @@ function block(start, indent = '  ') {
 const harness = [
   'const { escape } = __SC;',
   'const classLabel = code => "[" + code + "]";', // libellé réel inchangé par ce chantier
-  'const SQORZ_STATS_BASE = "https://x/";',
+  'const STATS_BASE = "https://x/";',
   'let yearFilter = new Set(), sortCol = "wins", sortDir = "desc";',
   block('function sortedPilots(pilots) {'),
   block('function buildTableHtml(pilots, totalWins, totalPodiums) {'),
