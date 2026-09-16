@@ -439,6 +439,24 @@ footer a:hover{text-decoration:underline}
     'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/pilots-index.json',
     'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/pilots-index.json',
   ];
+  // Index UEC (JSTiming — Coupe/Championnats d'Europe) : mêmes sources, optionnel.
+  const UEC_INDEX_SOURCES = [
+    'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/uec-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/uec-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/uec-index.json',
+  ];
+  // Index UCI (Mondiaux BMX Racing) : mêmes sources, optionnel.
+  const UCI_INDEX_SOURCES = [
+    'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/uci-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/uci-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/uci-index.json',
+  ];
+  // Index Coupe du monde UCI : mêmes sources, optionnel.
+  const WC_INDEX_SOURCES = [
+    'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/uci-worldcup-index.json',
+    'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/uci-worldcup-index.json',
+    'https://raw.githubusercontent.com/LudSoc/bmx-race-stats/main/uci-worldcup-index.json',
+  ];
   const STATS_BASE = window.location.protocol === 'file:'
     ? '../sqorz_stats/index.html'
     : 'https://ludsoc.github.io/bmx-race-stats/';
@@ -634,6 +652,9 @@ footer a:hover{text-decoration:underline}
 
   // --- État global ---
   let pilotsIndex = null;
+  let uecIndex = null;   // index UEC (optionnel) — compté dans les stats des pilotes du club
+  let uciIndex = null;   // index UCI Mondiaux (optionnel) — idem
+  let wcIndex = null;    // index Coupe du monde UCI (optionnel) — idem
   let clubsMap    = null;
   let selectedClubKey = null;
   let yearFilter     = new Set(); // vide = toutes les années
@@ -672,6 +693,12 @@ footer a:hover{text-decoration:underline}
   // --- Chargement via BmxCommon.loadIndexCached (cache Cache API piloté par meta.json) ---
   const INDEX_CACHE_KEY = 'https://bmx-race.local/cache/pilots-index.json';
   const INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/pilots-index.meta.json';
+  const UEC_INDEX_CACHE_KEY = 'https://bmx-race.local/cache/uec-index.json';
+  const UEC_INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/uec-index.meta.json';
+  const UCI_INDEX_CACHE_KEY = 'https://bmx-race.local/cache/uci-index.json';
+  const UCI_INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/uci-index.meta.json';
+  const WC_INDEX_CACHE_KEY = 'https://bmx-race.local/cache/uci-worldcup-index.json';
+  const WC_INDEX_META_URL = 'https://ludsoc.github.io/bmx-race-stats/uci-worldcup-index.meta.json';
 
   function pilotsCfg() {
     return {
@@ -682,11 +709,41 @@ footer a:hover{text-decoration:underline}
       onProgress: (done, total) => setProgress(done, total),
     };
   }
+  function uecCfg() {
+    return {
+      metaUrl: UEC_INDEX_META_URL, cacheKey: UEC_INDEX_CACHE_KEY, sources: UEC_INDEX_SOURCES,
+      tag: '[club:uec]', label: 'Index UEC', estimatedSize: 10_000_000,
+      expandOpts: { details: 'chrono', series: false },
+      onStatus: indexStatus, onProgress: setProgress,
+    };
+  }
+  function uciCfg() {
+    return {
+      metaUrl: UCI_INDEX_META_URL, cacheKey: UCI_INDEX_CACHE_KEY, sources: UCI_INDEX_SOURCES,
+      tag: '[club:uci]', label: 'Index UCI', estimatedSize: 5_000_000,
+      expandOpts: { details: 'chrono', series: false },
+      onStatus: indexStatus, onProgress: setProgress,
+    };
+  }
+  function wcCfg() {
+    return {
+      metaUrl: WC_INDEX_META_URL, cacheKey: WC_INDEX_CACHE_KEY, sources: WC_INDEX_SOURCES,
+      tag: '[club:wc]', label: 'Index Coupe du monde', estimatedSize: 1_000_000,
+      expandOpts: { details: 'chrono', series: false },
+      onStatus: indexStatus, onProgress: setProgress,
+    };
+  }
+  function indexStatus(text, isError) {
+    if (isError) console.warn('[club] ' + text);
+  }
 
   // Fraîcheur dans le pied de page (via BmxCommon.renderDataDates).
   function showDataDates() {
     renderDataDates([
       { tag: 'FR', iso: pilotsIndex && pilotsIndex.generated },
+      { tag: 'UEC', iso: uecIndex && uecIndex.generated },
+      { tag: 'UCI', iso: uciIndex && uciIndex.generated },
+      { tag: 'WC', iso: wcIndex && wcIndex.generated },
     ]);
   }
 
@@ -703,6 +760,9 @@ footer a:hover{text-decoration:underline}
       setStatus(`${clubsMap.size} clubs disponibles — tapez pour chercher.`);
       showDataDates();
       document.getElementById('tabBar').hidden = false;
+      loadUecInBackground();
+      loadUciInBackground();
+      loadWcInBackground();
     } catch (e) {
       setProgress(0, 0);
       setStatus('Impossible de charger les données : ' + humanError(e), true);
@@ -710,6 +770,26 @@ footer a:hover{text-decoration:underline}
     }
   }
   retryBtn.onclick = loadIndex;
+
+  // Index UEC/UCI/WC : arrière-plan — les stats des pilotes du club les intègrent à leur arrivée.
+  async function loadUecInBackground() {
+    try { uecIndex = await loadIndexCached({ ...uecCfg(), quiet: true }); }
+    catch (e) { console.warn('[club] uec-index indisponible :', e && e.message); uecIndex = null; }
+    showDataDates();
+    if (selectedClubKey) renderResults();
+  }
+  async function loadUciInBackground() {
+    try { uciIndex = await loadIndexCached({ ...uciCfg(), quiet: true }); }
+    catch (e) { console.warn('[club] uci-index indisponible :', e && e.message); uciIndex = null; }
+    showDataDates();
+    if (selectedClubKey) renderResults();
+  }
+  async function loadWcInBackground() {
+    try { wcIndex = await loadIndexCached({ ...wcCfg(), quiet: true }); }
+    catch (e) { console.warn('[club] uci-worldcup-index indisponible :', e && e.message); wcIndex = null; }
+    showDataDates();
+    if (selectedClubKey) renderResults();
+  }
 
   document.getElementById('tabBar').querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -941,53 +1021,89 @@ footer a:hover{text-decoration:underline}
     const yearsActive = !ignoreYearFilter && yearFilter.size > 0;
     const pilotMap = new Map();
 
+    // Passe 0 : l'identité du club est définie par ses pilotes vus en FR (groupName = club).
+    // Les index UEC/UCI/WC n'ont pas de groupement club (code pays) : on y matche par nom.
+    const clubPilotKeys = new Set();
     for (const ev of (pilotsIndex.events || [])) {
-      const year = (ev.event.eventDate || '').slice(0, 4);
-      if (yearsActive && !yearFilter.has(year)) continue;
-
+      if (yearsActive && !yearFilter.has((ev.event.eventDate || '').slice(0, 4))) continue;
       for (const cls of (ev.classes || [])) {
         if (!ignoreCatFilter && catFilter) {
           const code = cls.perpetualClassCode;
-          const catMatches = catFilter.startsWith('g:')
-            ? CODE_TO_GROUP.get(code)?.key === catFilter
-            : code === catFilter;
-          if (!catMatches) continue;
+          const ok = catFilter.startsWith('g:') ? CODE_TO_GROUP.get(code)?.key === catFilter : code === catFilter;
+          if (!ok) continue;
         }
-
         for (const c of (cls.competitors || [])) {
           const gn = c.groupName || '';
           if (!gn || normClub(gn) !== selectedClubKey) continue;
+          const key = norm((c.firstName || '') + ' ' + (c.lastName || ''));
+          if (key) clubPilotKeys.add(key);
+        }
+      }
+    }
 
-          const pilotKey = norm((c.firstName || '') + ' ' + (c.lastName || ''));
-          if (!pilotKey) continue;
+    const allSrcs = [
+      [pilotsIndex, 'club'],       // FR : on garde aussi le groupName en filtre de garantie
+      [uecIndex, 'name'],          // UEC : match par nom uniquement
+      [uciIndex, 'name'],          // UCI Mondiaux : idem
+      [wcIndex, 'name'],           // Coupe du monde : idem
+    ];
+    for (const [idx, mode] of allSrcs) {
+      if (!idx) continue;
+      for (const ev of (idx.events || [])) {
+        const year = (ev.event.eventDate || '').slice(0, 4);
+        if (yearsActive && !yearFilter.has(year)) continue;
 
-          if (!pilotMap.has(pilotKey)) {
-            pilotMap.set(pilotKey, {
-              firstName:   c.firstName || '',
-              lastName:    c.lastName  || '',
-              seenEvents:  new Map(),
-              classCounts: new Map(),
-            });
+        for (const cls of (ev.classes || [])) {
+          if (!ignoreCatFilter && catFilter) {
+            const code = cls.perpetualClassCode;
+            const catMatches = catFilter.startsWith('g:')
+              ? CODE_TO_GROUP.get(code)?.key === catFilter
+              : code === catFilter;
+            if (!catMatches) continue;
           }
-          const pilot = pilotMap.get(pilotKey);
 
-          // Catégorie dominante
-          const code = cls.perpetualClassCode || cls.className || '';
-          if (code) pilot.classCounts.set(code, (pilot.classCounts.get(code) || 0) + 1);
+          for (const c of (cls.competitors || [])) {
+            // FR : groupe club exigé. International : le nom doit appartenir au club.
+            if (mode === 'club') {
+              const gn = c.groupName || '';
+              if (!gn || normClub(gn) !== selectedClubKey) continue;
+            } else {
+              const pilotKey = norm((c.firstName || '') + ' ' + (c.lastName || ''));
+              if (!pilotKey || !clubPilotKeys.has(pilotKey)) continue;
+            }
 
-          // Clé composite : eventId + année + code catégorie
-          const evKey      = `${ev.event.eventId}|${year}|${cls.perpetualClassCode || cls.className || ''}`;
-          const existing   = pilot.seenEvents.get(evKey);
-          const rank        = typeof c.rank === 'number' ? c.rank : Infinity;
-          const existRank   = existing ? (typeof existing.competitor.rank === 'number' ? existing.competitor.rank : Infinity) : Infinity;
-          if (!existing || rank < existRank) {
-            pilot.seenEvents.set(evKey, {
-              account: ev.account,
-              event:   ev.event,
-              cls:     { className: cls.className, perpetualClassCode: cls.perpetualClassCode },
-              competitor: c,
-              totalParticipants: cls.total || (cls.competitors || []).length,
-            });
+            const pilotKey = norm((c.firstName || '') + ' ' + (c.lastName || ''));
+            if (!pilotKey) continue;
+
+            if (!pilotMap.has(pilotKey)) {
+              pilotMap.set(pilotKey, {
+                firstName:   c.firstName || '',
+                lastName:    c.lastName  || '',
+                seenEvents:  new Map(),
+                classCounts: new Map(),
+              });
+            }
+            const pilot = pilotMap.get(pilotKey);
+
+            // Catégorie dominante
+            const code = cls.perpetualClassCode || cls.className || '';
+            if (code) pilot.classCounts.set(code, (pilot.classCounts.get(code) || 0) + 1);
+
+            // Clé composite : source + eventId + année + code catégorie (évite les
+            // collisions d'eventId entre Sqorz FR et JSTiming UEC/UCI).
+            const evKey      = `${mode}|${ev.event.eventId}|${year}|${cls.perpetualClassCode || cls.className || ''}`;
+            const existing   = pilot.seenEvents.get(evKey);
+            const rank        = typeof c.rank === 'number' ? c.rank : Infinity;
+            const existRank   = existing ? (typeof existing.competitor.rank === 'number' ? existing.competitor.rank : Infinity) : Infinity;
+            if (!existing || rank < existRank) {
+              pilot.seenEvents.set(evKey, {
+                account: ev.account,
+                event:   ev.event,
+                cls:     { className: cls.className, perpetualClassCode: cls.perpetualClassCode },
+                competitor: c,
+                totalParticipants: cls.total || (cls.competitors || []).length,
+              });
+            }
           }
         }
       }
@@ -1439,28 +1555,63 @@ footer a:hover{text-decoration:underline}
   // --- Classement général : stats par club ---
   function buildAllClubsStats(year) {
     const clubData = new Map();
+    const getClub = key => {
+      if (!clubData.has(key)) clubData.set(key, { wins: 0, podiums: 0, entries: 0, pilotKeys: new Set(), rankSum: 0, rankCount: 0 });
+      return clubData.get(key);
+    };
+    const accrue = (key, dclub, c) => {
+      dclub.entries++;
+      const pk = norm((c.firstName || '') + ' ' + (c.lastName || ''));
+      if (pk) dclub.pilotKeys.add(pk);
+      if (typeof c.rank === 'number') {
+        if (c.rank === 1) dclub.wins++;
+        if (c.rank <= 3) dclub.podiums++;
+        dclub.rankSum += c.rank;
+        dclub.rankCount++;
+      }
+    };
+
+    // Passes FR : les clubs sont identifiés par leur groupName.
     for (const ev of (pilotsIndex.events || [])) {
       const evYear = (ev.event.eventDate || '').slice(0, 4);
       if (year && evYear !== year) continue;
       for (const cls of (ev.classes || [])) {
         for (const c of (cls.competitors || [])) {
           const gn = c.groupName || '';
-          if (!gn) continue;
           const key = normClub(gn);
-          if (!clubData.has(key)) clubData.set(key, { wins: 0, podiums: 0, entries: 0, pilotKeys: new Set(), rankSum: 0, rankCount: 0 });
-          const d = clubData.get(key);
-          d.entries++;
-          const pk = norm((c.firstName || '') + ' ' + (c.lastName || ''));
-          if (pk) d.pilotKeys.add(pk);
-          if (typeof c.rank === 'number') {
-            if (c.rank === 1) d.wins++;
-            if (c.rank <= 3) d.podiums++;
-            d.rankSum += c.rank;
-            d.rankCount++;
+          if (!gn || !key) continue;
+          accrue(key, getClub(key), c);
+        }
+      }
+    }
+
+    // Passes UEC/UCI/WC : les pilotes du club y sont retrouvés par nom (pas de
+    // groupement club) et leurs résultats sont attribués à leur club.
+    const pilotClub = new Map();
+    for (const ev of (pilotsIndex.events || [])) {
+      for (const cls of (ev.classes || [])) {
+        for (const c of (cls.competitors || [])) {
+          const k = norm((c.firstName || '') + ' ' + (c.lastName || ''));
+          if (k && !pilotClub.has(k)) pilotClub.set(k, normClub(c.groupName || ''));
+        }
+      }
+    }
+    for (const idx of [uecIndex, uciIndex, wcIndex]) {
+      if (!idx) continue;
+      for (const ev of (idx.events || [])) {
+        const evYear = (ev.event.eventDate || '').slice(0, 4);
+        if (year && evYear !== year) continue;
+        for (const cls of (ev.classes || [])) {
+          for (const c of (cls.competitors || [])) {
+            const pk = norm((c.firstName || '') + ' ' + (c.lastName || ''));
+            const key = pilotClub.get(pk);
+            if (!key) continue;
+            accrue(key, getClub(key), c);
           }
         }
       }
     }
+
     return [...clubData.entries()].map(([key, d]) => ({
       key,
       displayName: clubsMap.get(key)?.displayName || key,
