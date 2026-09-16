@@ -433,7 +433,7 @@ footer a:hover{text-decoration:underline}
 (() => {
   if (!window.BmxCommon) throw new Error('[club] common.js introuvable — recharge la page.');
   // Socle partagé (common.js) : utils, expansion d'index, chargeur à cache, dates.
-  const { norm, escape, humanError, isFinalPhase, isTimeTrialPhase, expandIndex, loadIndexCached, renderDataDates, setBarProgress, isFav, toggleFav, pushRecent } = window.BmxCommon;
+  const { norm, escape, humanError, isFinalPhase, isTimeTrialPhase, loadIndexCached, renderDataDates, setBarProgress, isFav, toggleFav, pushRecent } = window.BmxCommon;
   const INDEX_SOURCES = [
     'https://pub-7af06f138c97425f8062b881846803cb.r2.dev/pilots-index.json',
     'https://github.com/LudSoc/bmx-race-stats/releases/latest/download/pilots-index.json',
@@ -662,7 +662,6 @@ footer a:hover{text-decoration:underline}
   let catSectionOpen = false;
   let sortCol        = 'wins';
   let sortDir        = 'desc';
-  let activeTab        = 'club';
   let rankingYear      = String(new Date().getFullYear());
   let rankingSortCol   = 'wins';
   let rankingSortDir   = 'desc';
@@ -1819,7 +1818,6 @@ footer a:hover{text-decoration:underline}
   }
 
   function switchTab(tab) {
-    activeTab = tab;
     document.getElementById('tabBar').querySelectorAll('.tab-btn').forEach(btn => {
       const isActive = btn.dataset.tab === tab;
       btn.classList.toggle('active', isActive);
