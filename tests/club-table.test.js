@@ -20,6 +20,8 @@ function block(start, indent = '  ') {
 const harness = [
   'const { escape } = __SC;',
   'const classLabel = code => "[" + code + "]";', // libellé réel inchangé par ce chantier
+  'const REF_LEVEL_LABELS = { national: "National", regional: "Régional" };',
+  'const refLevelFor = code => "";', // niveau optionnel (categories-ref.json), hors périmètre de ce test
   'const STATS_BASE = "https://x/";',
   'let yearFilter = new Set(), sortCol = "wins", sortDir = "desc";',
   block('function sortedPilots(pilots) {'),

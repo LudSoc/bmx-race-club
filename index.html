@@ -277,7 +277,13 @@ input.control, select.control{width:100%}
   box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%, transparent);
 }
 .cat-card.active .cat-card-name{color:var(--accent-hi)}
-.cat-card-name{font-weight:600; font-size:13px; color:var(--ink); margin-bottom:10px}
+.cat-card-name{font-weight:600; font-size:13px; color:var(--ink); margin-bottom:10px; display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.cat-level-badge{display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; padding:0 6px; border-radius:99px; border:1px solid currentColor; line-height:1.6; margin-bottom:8px}
+.cat-level-badge::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+.cat-level-national{color:#4e80ee; background:color-mix(in srgb,#4e80ee 10%,transparent)}
+.cat-level-regional{color:#2bb3a3; background:color-mix(in srgb,#2bb3a3 12%,transparent)}
+.cat-level-uec{color:#9a6ff0; background:color-mix(in srgb,#9a6ff0 12%,transparent)}
+.cat-level-uci{color:#e06b8a; background:color-mix(in srgb,#e06b8a 12%,transparent)}
 .cat-card-stats{display:flex; gap:12px; flex-wrap:wrap}
 .cat-card-stat{display:flex; flex-direction:column; align-items:center; gap:2px}
 .cat-card-stat .v{font-size:18px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1}
@@ -510,6 +516,33 @@ footer a:hover{text-decoration:underline}
     const grp = CODE_TO_GROUP.get(code);
     if (grp) return grp.label;
     return CLASS_NAMES[code] || code;
+  }
+
+  // --- Référentiel catégories (niveaux) — optionnel, chargé en arrière-plan ---
+  const REF_LEVEL_LABELS = { national: 'National', regional: 'Régional', departemental: 'Départemental', uec: 'UEC', uci: 'UCI' };
+  let catRef = null;
+
+  // Niveau d'un code JSTiming/Sqorz : FR d'abord, puis UEC, Mondiaux, Coupe du monde.
+  function refLevelFor(code) {
+    if (!catRef || !code) return '';
+    const sections = ['categories', 'categoriesUec', 'categoriesUci', 'categoriesWorldCup'];
+    for (const src of sections) {
+      const entry = catRef[src] && catRef[src][code];
+      if (entry && entry.level) return entry.level;
+    }
+    return '';
+  }
+
+  async function loadCatRef() {
+    try {
+      const r = await fetch('../sqorz_stats/categories-ref.json', { cache: 'no-cache' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      catRef = await r.json();
+    } catch (e) {
+      catRef = null;
+      console.warn('[club] categories-ref.json indisponible (optionnel) :', e && e.message);
+    }
+    renderResults();
   }
 
   // --- Utilitaires : voir BmxCommon (norm, escape, humanError) ---
@@ -1025,8 +1058,10 @@ footer a:hover{text-decoration:underline}
         const grp    = CODE_TO_GROUP.get(code);
         const catKey = grp ? grp.key : code;
         const label  = grp ? grp.label : (CLASS_NAMES[code] || code);
-        if (!catMap.has(catKey)) catMap.set(catKey, { label, wins: 0, podiums: 0, total: 0, pilotKeys: new Set() });
+        if (!catMap.has(catKey)) catMap.set(catKey, { label, wins: 0, podiums: 0, total: 0, pilotKeys: new Set(), levels: new Map() });
         const bucket = catMap.get(catKey);
+        const lvl    = refLevelFor(code);
+        if (lvl) bucket.levels.set(lvl, (bucket.levels.get(lvl) || 0) + 1);
         if (typeof m.competitor.rank === 'number') {
           if (m.competitor.rank === 1) bucket.wins++;
           if (m.competitor.rank <= 3) bucket.podiums++;
@@ -1039,6 +1074,7 @@ footer a:hover{text-decoration:underline}
       .map(([catKey, b]) => ({
         code:       catKey,
         label:      b.label,
+        level:      b.levels.size ? [...b.levels.entries()].sort((x, y) => y[1] - x[1])[0][0] : '',
         pilotCount: b.pilotKeys.size,
         wins:       b.wins,
         podiums:    b.podiums,
@@ -1314,7 +1350,7 @@ footer a:hover{text-decoration:underline}
       return `<tr class="pilot-row" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
         <td>${rankCell}</td>
         <td>${nameCell}</td>
-        ${showCat ? `<td style="text-align:left;font-size:11.5px;color:var(--muted)">${escape(classLabel(pilot.dominantCode))}</td>` : ''}
+        ${showCat ? `<td style="text-align:left;font-size:11.5px;color:var(--muted)">${escape(classLabel(pilot.dominantCode))}${(() => { const lvl = refLevelFor(pilot.dominantCode); return lvl ? ` <span class="cat-level-badge cat-level-${lvl}">${escape(REF_LEVEL_LABELS[lvl] || lvl)}</span>` : ''; })()}</td>` : ''}
         <td style="text-align:left;white-space:nowrap">${pilot.years.map(y => `<span style="display:inline-block;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:99px;background:var(--card-soft);border:1px solid var(--line-strong);color:var(--ink-2);margin-right:2px">${escape(y)}</span>`).join('')}</td>
         <td>${s.entries}</td>
         <td>${winsCell}</td>
@@ -1337,7 +1373,7 @@ footer a:hover{text-decoration:underline}
 
     const cardsHtml = cats.map(c => `
       <div class="cat-card${catFilter === c.code ? ' active' : ''}" data-code="${escape(c.code)}" title="${catFilter === c.code ? 'Cliquer pour effacer le filtre' : 'Cliquer pour filtrer sur cette catégorie'}" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-        <div class="cat-card-name">${escape(c.label)}</div>
+        <div class="cat-card-name">${escape(c.label)}${c.level ? `<span class="cat-level-badge cat-level-${c.level}">${escape(REF_LEVEL_LABELS[c.level] || c.level)}</span>` : ''}</div>
         <div class="cat-card-stats">
           <div class="cat-card-stat"><span class="v">${c.pilotCount}</span><span class="k">Pilotes</span></div>
           <div class="cat-card-stat"><span class="v">${c.wins}</span><span class="k">Victoires</span></div>
@@ -1645,6 +1681,7 @@ footer a:hover{text-decoration:underline}
   }
 
   // --- Init ---
+  loadCatRef();
   loadIndex().then(() => {
     const { club, q } = parseUrlState();
     const key = club && normClub(club);
