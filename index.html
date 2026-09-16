@@ -1080,7 +1080,7 @@ footer a:hover{text-decoration:underline}
         podiums:    b.podiums,
         rate:       b.total ? Math.round(100 * b.podiums / b.total) : 0,
       }))
-      .sort((a, b) => b.wins - a.wins || b.podiums - a.podiums);
+      .sort((a, b) => a.label.localeCompare(b.label, 'fr'));
   }
 
   // --- Graphe progression annuelle ---
@@ -1180,7 +1180,7 @@ footer a:hover{text-decoration:underline}
     const finaleEntries = countFinaleEntries(pilots);
     const finaleRate    = totalParts > 0 ? Math.round(100 * finaleEntries / totalParts) : 0;
     const catsData      = buildCatsData(pilotsAll);
-    const bestCat       = catsData[0] || null;
+    const bestCat       = [...catsData].sort((a, b) => b.wins - a.wins || b.podiums - a.podiums)[0] || null;
     const yearlyStats   = buildYearlyStats();
 
     // Années disponibles (depuis la map, pas filtrées)
